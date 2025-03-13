@@ -23,6 +23,9 @@ jobs:
 
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.cicd-env.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.cicd-env.DOCKERHUB_PASSWORD }}        
 
       - name: Push Docker image
         run: docker push zupandit/tutor-connect:latest
