@@ -33,34 +33,40 @@ jobs:
     needs: build-and-push
     environment: cicd-env
     steps:
-      - name: SSH into EC2 and deploy with docker-compose
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            # Create /app/newDir if it doesn't exist, and set proper ownership
-            if [ ! -d "/app/newDir" ]; then
-              sudo mkdir -p /app/newDir
-              sudo chown $(whoami):$(whoami) /app/newDir
-            fi
-            cd /app/newDir
+    - name: SSH into EC2 and deploy with docker-compose
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          # Create /app directory if it doesn't exist and set ownership
+          if [ ! -d "/app" ]; then
+            sudo mkdir -p /app
+            sudo chown ec2-user:ec2-user /app
+          fi
+          cd /app
 
-            # Clone the repository using SSH if not present, else update it
-            if [ ! -d ".git" ]; then
-              git clone git@github.com:zupandit/TutorConnect.git .
-            else
-              git pull origin main
-            fi
+          # Remove any existing TutorConnect directory to ensure a clean clone
+          if [ -d "TutorConnect" ]; then
+            echo "Removing existing TutorConnect directory..."
+            rm -rf TutorConnect
+          fi
 
-            # Create or update .env.production with required environment variables
-            echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" > .env.production
-            echo "MONGODB_URI=mongodb://mongodb:27017/tutor-connect" >> .env.production
-            echo "NEXTAUTH_URL=http://99.79.41.124" >> .env.production
+          # Clone the repository fresh into /app/TutorConnect
+          git clone https://github.com/zupandit/TutorConnect.git
 
-            # Use docker-compose to deploy the application
-            docker-compose pull
-            docker-compose down || true
-            docker-compose up -d
+          # Change into the repository directory
+          cd TutorConnect
+
+          # Create or update .env.production with the required environment variables
+          echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" > .env.production
+          echo "MONGODB_URI=mongodb://mongodb:27017/tutor-connect" >> .env.production
+          echo "NEXTAUTH_URL=http://99.79.41.124" >> .env.production
+
+          # Use docker-compose to deploy the application
+          docker-compose pull
+          docker-compose down || true
+          docker-compose up -d
+
