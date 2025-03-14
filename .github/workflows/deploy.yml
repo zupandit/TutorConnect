@@ -33,17 +33,22 @@ jobs:
     needs: build-and-push
     environment: cicd-env
     steps:
-      - name: SSH into EC2 and deploy container
-        uses: appleboy/ssh-action@v0.1.8
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" > .env.production
-            # Pull the latest image
-            docker pull zupandit/tutor-connect:latest
-            # Stop and remove old container if it exists
-            docker stop tutor-connect || true && docker rm tutor-connect || true
-            # Run the container (mapping container port 3000 to host port 80)
-            docker run -d --name tutor-connect -p 80:3000 zupandit/tutor-connect:latest
+    - name: SSH into EC2 and deploy container
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        port: 22
+        script: |
+          # Pull the latest image from Docker Hub
+          docker pull zupandit/tutor-connect:latest
+          # Stop and remove any old container if it exists
+          docker stop tutor-connect || true && docker rm tutor-connect || true
+          # Run the container with environment variables passed via -e flags
+          docker run -d --name tutor-connect -p 80:3000 \
+            -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
+            -e MONGODB_URI="mongodb://mongodb:27017/tutor-connect" \
+            -e NEXTAUTH_URL="http://localhost:3000" \
+            zupandit/tutor-connect:latest
+
