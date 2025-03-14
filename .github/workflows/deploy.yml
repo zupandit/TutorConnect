@@ -41,21 +41,21 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Create /app directory if it doesn't exist and set ownership
+            # Create /app/newDir if it doesn't exist, and set proper ownership
             if [ ! -d "/app/newDir" ]; then
               sudo mkdir -p /app/newDir
-              sudo chown $(whoami):$(whoami) /app
+              sudo chown $(whoami):$(whoami) /app/newDir
             fi
             cd /app/newDir
 
-            # Clone the repository if not present, else update it using the SSH URL
+            # Clone the repository using SSH if not present, else update it
             if [ ! -d ".git" ]; then
-              git clone  https://github.com/zupandit/TutorConnect.git .
+              git clone git@github.com:zupandit/TutorConnect.git .
             else
               git pull origin main
             fi
 
-            # Create or update .env.production with the required environment variables
+            # Create or update .env.production with required environment variables
             echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" > .env.production
             echo "MONGODB_URI=mongodb://mongodb:27017/tutor-connect" >> .env.production
             echo "NEXTAUTH_URL=http://99.79.41.124" >> .env.production
