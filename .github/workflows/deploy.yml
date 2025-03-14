@@ -41,39 +41,24 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
           script: |
-            # Stop and remove existing containers
-            docker stop tutor-connect tutorconnect-mongodb || true
-            docker rm tutor-connect tutorconnect-mongodb || true
+            # Ensure the custom network exists
+            docker network ls | grep tutor-network || docker network create tutor-network
 
-            # Remove existing network if it exists
-            docker network rm tutor-network || true
-
-            # Create a new network
-            docker network create tutor-network
-
-            # Start MongoDB container first
-            docker run -d \
-              --name tutorconnect-mongodb \
-              --network tutor-network \
-              -p 27017:27017 \
-              mongo:latest
-
-            # Wait for MongoDB to be ready
-            sleep 5
+            # Start MongoDB container if not already running on the network
+            if ! docker ps --filter "name=tutorconnect-mongodb" | grep tutorconnect-mongodb; then
+              docker run -d --name tutorconnect-mongodb --network tutor-network -p 27017:27017 mongo:latest
+            fi
 
             # Pull the latest image for the app
             docker pull zupandit/tutor-connect:latest
 
-            # Run the app container
-            docker run -d \
-              --name tutor-connect \
-              --network tutor-network \
-              -p 80:3000 \
-              -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
-              -e MONGODB_URI="mongodb://tutorconnect-mongodb:27017/tutor-connect" \
-              -e NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}" \
-              zupandit/tutor-connect:latest
+            # Stop and remove any existing app container
+            docker stop tutor-connect || true && docker rm tutor-connect || true
 
-            # Check container logs
-            docker logs tutor-connect
+            # Run the app container with environment variables hardcoded
+            docker run -d --name tutor-connect -p 80:3000 --network tutor-network \
+              -e NEXTAUTH_SECRET="uE6RdeaWKTJpHM+5ImRW+Tq6fzW8cRGtVUwbZGyrD4I=" \
+              -e MONGODB_URI="mongodb://mongodb:27017/tutor-connect" \
+              -e NEXTAUTH_URL="http://99.79.41.124" \
+              zupandit/tutor-connect:latest
 
