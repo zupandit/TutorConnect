@@ -39,10 +39,16 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
           script: |
-            # Pull the latest image
-            docker pull zupandit/tutor-connect:latest
-            # Stop and remove old container if it exists
-            docker stop tutor-connect || true && docker rm tutor-connect || true
-            # Run the container (mapping container port 3000 to host port 80)
-            docker run -d --name tutor-connect -p 80:3000 zupandit/tutor-connect:latest
+            # Change directory to where your project (and docker-compose.yml) is located
+            cd /app
+            # Create or update .env.production with the secret from GitHub
+            echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" > .env.production
+            # Optionally, add other environment variables here if needed
+            # Pull the latest image from Docker Hub
+            docker-compose pull
+            # Stop and remove the old container if it exists
+            docker-compose down || true
+            # Start up your updated services in detached mode
+            docker-compose up -d
