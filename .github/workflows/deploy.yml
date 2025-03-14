@@ -43,12 +43,12 @@ jobs:
         script: |
           # Pull the latest image from Docker Hub
           docker pull zupandit/tutor-connect:latest
-          # Stop and remove any old container if it exists
+          # Stop and remove any existing container named tutor-connect
           docker stop tutor-connect || true && docker rm tutor-connect || true
-          # Run the container with environment variables passed via -e flags
-          docker run -d --name tutor-connect -p 80:3000 \
+          # Run the container on the custom network "tutor-network"
+          docker run -d --name tutor-connect -p 80:3000 --network tutor-network \
             -e NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}" \
             -e MONGODB_URI="mongodb://mongodb:27017/tutor-connect" \
-            -e NEXTAUTH_URL="http://localhost:3000" \
+            -e NEXTAUTH_URL="http://99.79.41.124" \
             zupandit/tutor-connect:latest
 
