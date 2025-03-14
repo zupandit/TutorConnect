@@ -50,7 +50,7 @@ jobs:
 
             # Clone the repository if not present, else update it using the SSH URL
             if [ ! -d ".git" ]; then
-              git clone git@github.com:yourusername/yourrepo.git .
+              git clone  https://github.com/zupandit/TutorConnect.git
             else
               git pull origin main
             fi
