@@ -42,15 +42,15 @@ jobs:
           port: 22
           script: |
             # Create /app directory if it doesn't exist and set ownership
-            if [ ! -d "/app" ]; then
-              sudo mkdir -p /app
+            if [ ! -d "/app/newDir" ]; then
+              sudo mkdir -p /app/newDir
               sudo chown $(whoami):$(whoami) /app
             fi
-            cd /app
+            cd /app/newDir
 
             # Clone the repository if not present, else update it using the SSH URL
             if [ ! -d ".git" ]; then
-              git clone  https://github.com/zupandit/TutorConnect.git
+              git clone  https://github.com/zupandit/TutorConnect.git .
             else
               git pull origin main
             fi
